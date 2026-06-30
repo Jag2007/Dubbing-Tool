@@ -94,7 +94,21 @@ def dub_audio(
         translated_text = translate_text(transcript, target_language)
         translated_at = time.perf_counter()
         if delivery_mode == "preserve_original":
-            generate_dubbed_audio(str(upload_path), target_language, str(output_path))
+            try:
+                generate_dubbed_audio(str(upload_path), target_language, str(output_path))
+            except RuntimeError as exc:
+                message = str(exc)
+                can_fallback_to_voice = voice_id and (
+                    "subscription_required" in message
+                    or "watermark_not_allowed" in message
+                    or "Dubbing failed to start with 400" in message
+                )
+
+                if not can_fallback_to_voice:
+                    raise
+
+                delivery_mode = "selected_voice"
+                generate_speech(translated_text, voice_id, str(output_path), modulation_preset)
         else:
             generate_speech(translated_text, voice_id, str(output_path), modulation_preset)
         finished_at = time.perf_counter()
