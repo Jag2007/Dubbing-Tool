@@ -44,6 +44,7 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [audioObjectUrl, setAudioObjectUrl] = useState("");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -82,13 +83,53 @@ function App() {
     loadInitialData();
   }, []);
 
-  const audioUrl = useMemo(() => {
+  const outputAudioUrl = useMemo(() => {
     if (!result?.output_audio_url) {
       return "";
     }
 
     return `${API_BASE_URL}${result.output_audio_url}`;
   }, [result]);
+
+  useEffect(() => {
+    if (!outputAudioUrl) {
+      setAudioObjectUrl("");
+      return undefined;
+    }
+
+    let objectUrl = "";
+    let cancelled = false;
+
+    async function loadAudio() {
+      try {
+        const response = await fetch(outputAudioUrl, { headers: API_HEADERS });
+
+        if (!response.ok) {
+          throw new Error("Dubbed audio was generated, but the browser could not load it.");
+        }
+
+        const audioBlob = await response.blob();
+        objectUrl = URL.createObjectURL(audioBlob);
+
+        if (!cancelled) {
+          setAudioObjectUrl(objectUrl);
+        }
+      } catch (audioError) {
+        if (!cancelled) {
+          setError(audioError.message);
+        }
+      }
+    }
+
+    loadAudio();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [outputAudioUrl]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -306,7 +347,7 @@ function App() {
 
                 <div className="audio-block">
                   <h2>Dubbed audio</h2>
-                  <audio controls src={audioUrl}>
+                  <audio controls src={audioObjectUrl}>
                     Your browser does not support the audio element.
                   </audio>
                   {result.timings && (
@@ -317,7 +358,7 @@ function App() {
                       in {result.timings.total_seconds}s
                     </p>
                   )}
-                  <a className="download-link" href={audioUrl} download>
+                  <a className="download-link" href={audioObjectUrl || outputAudioUrl} download>
                     <Download size={17} />
                     Download MP3
                   </a>
