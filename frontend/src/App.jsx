@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
+const API_HEADERS = {
+  "ngrok-skip-browser-warning": "true",
+};
 
 const FALLBACK_LANGUAGES = [
   { code: "hi", name: "Hindi" },
@@ -46,10 +49,12 @@ function App() {
     async function loadInitialData() {
       try {
         const [languagesResponse, voicesResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/languages`),
-          fetch(`${API_BASE_URL}/voices`),
+          fetch(`${API_BASE_URL}/languages`, { headers: API_HEADERS }),
+          fetch(`${API_BASE_URL}/voices`, { headers: API_HEADERS }),
         ]);
-        const presetsResponse = await fetch(`${API_BASE_URL}/modulation-presets`);
+        const presetsResponse = await fetch(`${API_BASE_URL}/modulation-presets`, {
+          headers: API_HEADERS,
+        });
 
         if (languagesResponse.ok) {
           setLanguages(await languagesResponse.json());
@@ -112,6 +117,7 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/dub`, {
         method: "POST",
+        headers: API_HEADERS,
         body: formData,
       });
 
