@@ -60,6 +60,18 @@ def modulation_presets():
     return get_modulation_presets()
 
 
+def resolve_voice_id(voice_id: str) -> str:
+    if voice_id:
+        return voice_id
+
+    voices = get_voices()
+    fallback_voice_id = voices[0].get("voice_id") if voices else ""
+    if not fallback_voice_id:
+        raise ValueError("No ElevenLabs voice is available for fallback speech.")
+
+    return fallback_voice_id
+
+
 @app.post("/dub")
 def dub_audio(
     audio_file: UploadFile = File(...),
@@ -98,7 +110,7 @@ def dub_audio(
                 generate_dubbed_audio(str(upload_path), target_language, str(output_path))
             except RuntimeError as exc:
                 message = str(exc)
-                can_fallback_to_voice = voice_id and (
+                can_fallback_to_voice = (
                     "subscription_required" in message
                     or "watermark_not_allowed" in message
                     or "Dubbing failed to start with 400" in message
@@ -107,6 +119,7 @@ def dub_audio(
                 if not can_fallback_to_voice:
                     raise
 
+                voice_id = resolve_voice_id(voice_id)
                 delivery_mode = "selected_voice"
                 generate_speech(translated_text, voice_id, str(output_path), modulation_preset)
         else:
