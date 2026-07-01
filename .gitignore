@@ -4,6 +4,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.xtts-venv/
 venv/
 
 # Environment files
@@ -14,6 +15,7 @@ frontend/.env
 # Runtime files
 backend/uploads/*
 backend/outputs/*
+backend/my_voice.wav
 !backend/uploads/.gitkeep
 !backend/outputs/.gitkeep
 

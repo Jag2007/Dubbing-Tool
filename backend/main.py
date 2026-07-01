@@ -17,6 +17,7 @@ from elevenlabs_service import (
 )
 from translation_service import get_supported_languages, translate_text
 from whisper_service import transcribe_audio
+from xtts_service import generate_jagruthi_voice
 
 load_dotenv()
 
@@ -83,7 +84,7 @@ def dub_audio(
     if not audio_file.filename:
         raise HTTPException(status_code=400, detail="Please upload an audio file.")
 
-    if delivery_mode not in {"selected_voice", "preserve_original"}:
+    if delivery_mode not in {"selected_voice", "preserve_original", "jagruthi_voice"}:
         raise HTTPException(status_code=400, detail="Unsupported delivery mode selected.")
 
     if delivery_mode == "selected_voice" and not voice_id:
@@ -105,7 +106,10 @@ def dub_audio(
         transcribed_at = time.perf_counter()
         translated_text = translate_text(transcript, target_language)
         translated_at = time.perf_counter()
-        if delivery_mode == "preserve_original":
+        if delivery_mode == "jagruthi_voice":
+            voice_id = "jagruthi_voice"
+            generate_jagruthi_voice(translated_text, target_language, str(output_path))
+        elif delivery_mode == "preserve_original":
             try:
                 generate_dubbed_audio(str(upload_path), target_language, str(output_path))
             except RuntimeError as exc:

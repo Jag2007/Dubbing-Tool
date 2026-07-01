@@ -31,6 +31,8 @@ const FALLBACK_MODULATION_PRESETS = [
   { code: "dramatic", name: "Dramatic" },
 ];
 
+const LOCAL_VOICE_LANGUAGE_CODES = new Set(["fr", "es"]);
+
 function App() {
   const [mediaFile, setMediaFile] = useState(null);
   const [languages, setLanguages] = useState(FALLBACK_LANGUAGES);
@@ -146,6 +148,11 @@ function App() {
       return;
     }
 
+    if (deliveryMode === "jagruthi_voice" && !LOCAL_VOICE_LANGUAGE_CODES.has(targetLanguage)) {
+      setError("Jagruthi's local XTTS voice currently supports French and Spanish.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("audio_file", mediaFile);
     formData.append("target_language", targetLanguage);
@@ -219,6 +226,7 @@ function App() {
                   onChange={(event) => setDeliveryMode(event.target.value)}
                 >
                   <option value="selected_voice">Use selected voice</option>
+                  <option value="jagruthi_voice">Jagruthi&apos;s voice</option>
                   <option value="preserve_original">Preserve original delivery</option>
                 </select>
               </div>
@@ -252,10 +260,14 @@ function App() {
                   onChange={(event) => setVoiceId(event.target.value)}
                   disabled={
                     deliveryMode === "preserve_original" ||
+                    deliveryMode === "jagruthi_voice" ||
                     loadingVoices ||
                     voices.length === 0
                   }
                 >
+                  {deliveryMode === "jagruthi_voice" && (
+                    <option>Uses backend/my_voice.wav locally</option>
+                  )}
                   {deliveryMode === "preserve_original" && (
                     <option>Uses original speaker style</option>
                   )}
@@ -278,8 +290,9 @@ function App() {
                   id="modulation"
                   value={modulationPreset}
                   onChange={(event) => setModulationPreset(event.target.value)}
-                  disabled={deliveryMode === "preserve_original"}
+                  disabled={deliveryMode === "preserve_original" || deliveryMode === "jagruthi_voice"}
                 >
+                  {deliveryMode === "jagruthi_voice" && <option>Local XTTS voice clone</option>}
                   {deliveryMode === "preserve_original" && (
                     <option>Original delivery preserved</option>
                   )}
@@ -328,6 +341,8 @@ function App() {
                 <p>
                   {deliveryMode === "preserve_original"
                     ? "Whisper and NLLB prepare the text while ElevenLabs preserves the source delivery."
+                    : deliveryMode === "jagruthi_voice"
+                      ? "Whisper and NLLB prepare the text while local XTTS renders Jagruthi's voice."
                     : "Whisper transcribes, NLLB translates locally, and ElevenLabs renders the voice."}
                 </p>
               </div>
@@ -354,6 +369,8 @@ function App() {
                     <p className="timing-text">
                       {result.delivery_mode === "preserve_original"
                         ? "Preserved original delivery"
+                        : result.delivery_mode === "jagruthi_voice"
+                          ? "Generated with Jagruthi's local voice"
                         : "Generated with selected voice"}{" "}
                       in {result.timings.total_seconds}s
                     </p>
