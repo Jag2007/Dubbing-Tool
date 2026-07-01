@@ -31,8 +31,6 @@ const FALLBACK_MODULATION_PRESETS = [
   { code: "dramatic", name: "Dramatic" },
 ];
 
-const LOCAL_VOICE_LANGUAGE_CODES = new Set(["fr", "es"]);
-
 function App() {
   const [mediaFile, setMediaFile] = useState(null);
   const [languages, setLanguages] = useState(FALLBACK_LANGUAGES);
@@ -145,11 +143,6 @@ function App() {
 
     if (deliveryMode === "selected_voice" && !voiceId) {
       setError("Please select an ElevenLabs voice.");
-      return;
-    }
-
-    if (deliveryMode === "jagruthi_voice" && !LOCAL_VOICE_LANGUAGE_CODES.has(targetLanguage)) {
-      setError("Jagruthi's local XTTS voice currently supports French and Spanish.");
       return;
     }
 

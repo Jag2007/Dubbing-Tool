@@ -8,20 +8,18 @@ BASE_DIR = Path(__file__).resolve().parent
 REFERENCE_VOICE_PATH = BASE_DIR / "my_voice.wav"
 XTTS_VENV_PYTHON = BASE_DIR / ".xtts-venv" / "bin" / "python"
 XTTS_RUNNER_PATH = BASE_DIR / "xtts_runner.py"
-XTTS_SUPPORTED_LANGUAGES = {
-    "en": "English",
-    "fr": "French",
-    "es": "Spanish",
+XTTS_LANGUAGE_MAP = {
+    "en": "en",
+    "fr": "fr",
+    "es": "es",
+    "hi": "en",
+    "te": "en",
+    "kn": "en",
 }
 
 
 def generate_jagruthi_voice(text: str, target_language: str, output_path: str) -> None:
-    if target_language not in XTTS_SUPPORTED_LANGUAGES:
-        supported = ", ".join(XTTS_SUPPORTED_LANGUAGES.values())
-        raise ValueError(
-            "Jagruthi's local XTTS voice currently supports "
-            f"{supported}. Use ElevenLabs for Hindi, Telugu, or Kannada."
-        )
+    xtts_language = XTTS_LANGUAGE_MAP.get(target_language, "en")
 
     if not REFERENCE_VOICE_PATH.exists():
         raise ValueError("Missing backend/my_voice.wav for Jagruthi's local voice.")
@@ -46,16 +44,16 @@ def generate_jagruthi_voice(text: str, target_language: str, output_path: str) -
                 "--speaker-wav",
                 str(REFERENCE_VOICE_PATH),
                 "--language",
-                target_language,
+                xtts_language,
                 "--output",
                 output_path,
-                ],
-                check=True,
-                capture_output=True,
-                env={**os.environ, "COQUI_TOS_AGREED": "1"},
-                text=True,
-                timeout=300,
-            )
+            ],
+            check=True,
+            capture_output=True,
+            env={**os.environ, "COQUI_TOS_AGREED": "1"},
+            text=True,
+            timeout=300,
+        )
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(exc.stderr or exc.stdout or "Local XTTS generation failed.") from exc
     finally:
